@@ -1,5 +1,5 @@
 pub mod errors;
-pub mod resource;
+pub mod serialize;
 pub mod macro_state;
 
 pub fn add(left: usize, right: usize) -> usize {
