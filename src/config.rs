@@ -4,6 +4,7 @@ use cargo_metadata::MetadataCommand;
 pub struct SurrealDeriveConfig {
     pub enable_snake_case: bool,
     pub enable_log: bool,
+    pub enable_compile_log: bool,
     pub namespace: String,
     pub info_log_macro: String
 }
@@ -13,6 +14,7 @@ impl Default for SurrealDeriveConfig {
         Self {
             enable_snake_case: false,
             enable_log: false,
+            enable_compile_log: false,
             namespace: "surreal-ql".to_string(),
             info_log_macro: "println".to_string()
         }
@@ -45,6 +47,11 @@ impl SurrealDeriveConfig {
             if let Some(v) = package.metadata["surreal_enable_snake_case"].as_bool() {
                 if v {
                    config.enable_snake_case = v;
+                }
+            }
+            if let Some(v) = package.metadata["surreal_enable_compile_log"].as_bool() {
+                if v {
+                    config.enable_compile_log = v;
                 }
             }
             if let Some(v) = package.metadata["surreal_namespace"].as_str() {

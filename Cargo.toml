@@ -3,11 +3,12 @@ name = "surreal_devl"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [package.metadata]
+# Will log the query command at runtime
 surreal_enable_log = false
-surreal_enable_snake_case = false
+# Log the generated code at build time
+surreal_enable_compile_log = false
+surreal_enable_snake_case = true
 surreal_namespace = "surrealql-derive"
 surreal_info_log_macro = "println"
 surreal_warn_log_macro = "println"
