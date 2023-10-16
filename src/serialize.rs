@@ -19,7 +19,7 @@ pub trait SurrealSerialize where Self: Sized + Into<RecordId> + Clone {
 
     fn into_content_expression(&self) -> String {
         self.into_idiom_value().iter().map(|it| {
-            return format!("{}{}{}", it.0.clone(), Operator::Equal, it.1.clone());
+            format!("{}{}{}", it.0.clone(), Operator::Equal, it.1.clone())
         }).collect::<Vec<String>>().join(",")
     }
 }

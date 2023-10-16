@@ -20,7 +20,7 @@ pub fn date<T> (target: &T) -> String where surrealdb::sql::Datetime: From<T>, T
     surrealdb::sql::Datetime::from(target.clone()).to_string()
 }
 
-pub fn array<T> (target: &Vec<T>) -> String where surrealdb::sql::Value: From<T>, T: Clone {
+pub fn array<T> (target: &[T]) -> String where surrealdb::sql::Value: From<T>, T: Clone {
     let array_value: Vec<surrealdb::sql::Value> = target.iter().map(|v| {
         surrealdb::sql::Value::from(v.clone())
     })

@@ -8,7 +8,7 @@ edition = "2021"
 surreal_enable_log = false
 # Log the generated code at build time
 surreal_enable_compile_log = false
-surreal_enable_snake_case = true
+surreal_use_camel_case = false
 surreal_namespace = "surrealql-derive"
 surreal_info_log_macro = "println"
 surreal_warn_log_macro = "println"
@@ -16,3 +16,6 @@ surreal_warn_log_macro = "println"
 [dependencies]
 surrealdb = "1.0.0"
 cargo_metadata = "0.18.1"
+
+[dev-dependencies]
+surreal_derive = { path = "../surreal-derive"}

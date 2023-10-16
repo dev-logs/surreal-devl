@@ -32,3 +32,25 @@ pub fn camel_to_snake_case(var_name: &str) -> String {
 
     result
 }
+
+#[cfg(test)]
+mod test{
+    use super::*;
+
+    #[test]
+    fn test_snake_case_to_camel() {
+        assert_eq!(snake_case_to_camel("hello_world"), "helloWorld");
+        assert_eq!(snake_case_to_camel("another_example"), "anotherExample");
+        assert_eq!(snake_case_to_camel("single"), "single");
+        assert_eq!(snake_case_to_camel(""), "");
+    }
+
+    #[test]
+    fn test_camel_to_snake_case() {
+        assert_eq!(camel_to_snake_case("HelloWorld"), "hello_world");
+        assert_eq!(camel_to_snake_case("AnotherExample"), "another_example");
+        assert_eq!(camel_to_snake_case("Single"), "single");
+        assert_eq!(camel_to_snake_case(""), "");
+        assert_eq!(camel_to_snake_case("camelCase"), "camel_case");
+    }
+}
