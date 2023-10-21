@@ -1,9 +1,63 @@
 use crate::serialize::SurrealSerialize;
 
+/// Generate statement that include id and combo of set statements for each struct fields
+/// USAGES:
+/// ```
+/// use surreal_derive::SurrealDerive;
+/// use surrealdb::sql::serde;
+/// use serde::Deserialize;
+/// use serde::Serialize;
+/// #[derive(Clone, Serialize, Deserialize, SurrealDerive)]
+/// struct Person {
+///     name: String,
+///     age: i32
+/// }
+///
+/// // It is necessary for a struct to specify what is its primary key
+/// impl From<Person> for surrealdb::sql::Value {
+///     fn from(value: Person) -> Self {
+///         ("person", value.name);
+///     }
+/// }
+///
+/// fn main() {
+///     use surreal_derive::surreal_quote;
+///     let p = Person {name: "surrealdb".to_string(), age: 20};
+///     let sql_statement = surreal_quote!("CREATE #record(&person)");
+///     assert!(sql_statement, "CREATE person:surrealdb SET name='surrealdb', age=10");
+/// }
+/// ```
 pub fn record<T> (target: &T) -> String where T: SurrealSerialize {
     format!("{} {}", target.into_id_expression(), target.into_set_expression())
 }
 
+/// Generate statement that include id and combo of set statements for each struct fields
+/// USAGES:
+/// ```
+/// use surreal_derive::SurrealDerive;
+/// use surrealdb::sql::serde;
+/// use serde::Deserialize;
+/// use serde::Serialize;
+/// #[derive(Clone, Serialize, Deserialize, SurrealDerive)]
+/// struct Person {
+///     name: String,
+///     age: i32
+/// }
+///
+/// // It is necessary for a struct to specify what is its primary key
+/// impl From<Person> for surrealdb::sql::Value {
+///     fn from(value: Person) -> Self {
+///         ("person", value.name);
+///     }
+/// }
+///
+/// fn main() {
+///     use surreal_derive::surreal_quote;
+///     let p = Person {name: "surrealdb".to_string(), age: 20};
+///     let sql_statement = surreal_quote!("CREATE #record(&person)");
+///     assert!(sql_statement, "CREATE person:surrealdb SET name='surrealdb', age=10");
+/// }
+/// ```
 pub fn id<T> (target: &T) -> String where T: SurrealSerialize {
     target.into_id_expression()
 }

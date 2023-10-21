@@ -6,11 +6,15 @@ edition = "2021"
 [package.metadata]
 # Will log the query command at runtime
 surreal_enable_log = false
-# Log the generated code at build time
+# Will log the generated code at build time
 surreal_enable_compile_log = false
+# Change the naming convention of generated statement into camel case
 surreal_use_camel_case = false
+# The log namespace, apply for both build time log and runtime log
 surreal_namespace = "surrealql-derive"
+# The macro name that use for info log, for example
 surreal_info_log_macro = "println"
+# The macro name that use for warning log, for example
 surreal_warn_log_macro = "println"
 
 [dependencies]
