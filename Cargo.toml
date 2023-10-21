@@ -2,6 +2,11 @@
 name = "surreal_devl"
 version = "0.1.0"
 edition = "2021"
+description = "Contains core logic of surreal derive"
+readme = "README.md"
+repository = "https://github.com/dev-logs/surreal-devl"
+license = "MIT OR Apache-2.0"
+keywords = ["surreal", "surrealdb", "db", "query-builder"]
 
 [package.metadata]
 # Will log the query command at runtime
