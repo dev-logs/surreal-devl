@@ -82,3 +82,7 @@ pub fn array<T> (target: &[T]) -> String where surrealdb::sql::Value: From<T>, T
 
     surrealdb::sql::Array::from(array_value).to_string()
 }
+
+pub fn val<T> (target: &T) -> String where surrealdb::sql::Value: From<T>, T: Clone {
+    surrealdb::sql::Value::from(target.clone()).to_string()
+}

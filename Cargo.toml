@@ -25,6 +25,3 @@ surreal_warn_log_macro = "println"
 [dependencies]
 surrealdb = "1.0.0"
 cargo_metadata = "0.18.1"
-
-[dev-dependencies]
-surreal_derive = { path = "../surreal-derive"}
