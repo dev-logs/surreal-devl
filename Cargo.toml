@@ -1,6 +1,6 @@
 [package]
 name = "surreal_devl"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 description = "Contains core logic of surreal derive"
 readme = "README.md"

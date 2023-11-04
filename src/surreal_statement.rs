@@ -86,3 +86,7 @@ pub fn array<T> (target: &[T]) -> String where surrealdb::sql::Value: From<T>, T
 pub fn val<T> (target: &T) -> String where surrealdb::sql::Value: From<T>, T: Clone {
     surrealdb::sql::Value::from(target.clone()).to_string()
 }
+
+pub fn duration<T> (target: &T) -> String where surrealdb::sql::Duration: From<T>, T: Clone {
+    surrealdb::sql::Value::Duration(surrealdb::sql::Duration::from(target.clone())).to_string()
+}
