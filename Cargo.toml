@@ -1,6 +1,6 @@
 [package]
 name = "surreal_devl"
-version = "1.0.2"
+version = "1.0.3"
 edition = "2021"
 description = "Contains core logic of surreal derive"
 readme = "README.md"
@@ -23,5 +23,5 @@ surreal_info_log_macro = "println"
 surreal_warn_log_macro = "println"
 
 [dependencies]
-surrealdb = "1.0.0"
+surrealdb = { version = "1.0.0", default-features = false }
 cargo_metadata = "0.18.1"
