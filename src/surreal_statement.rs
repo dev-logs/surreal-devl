@@ -1,3 +1,5 @@
+use surrealdb::error::Db::RelateStatement;
+use surrealdb::sql::Subquery::Relate;
 use crate::serialize::SurrealSerialize;
 
 /// Generate statement that include id and combo of set statements for each struct fields
@@ -29,6 +31,15 @@ use crate::serialize::SurrealSerialize;
 /// ```
 pub fn record<T> (target: &T) -> String where T: SurrealSerialize {
     format!("{} {}", target.into_id_expression(), target.into_set_expression())
+}
+
+pub fn multi<I> (targets: &Vec<I>) -> String where I: SurrealSerialize {
+    if targets.is_empty() {
+        return "".to_string();
+    }
+
+    let commands: Vec<String> = targets.iter().map(|target| record(target)).collect();
+    commands.join("; ")
 }
 
 /// Generate statement that include id and combo of set statements for each struct fields
