@@ -1,5 +1,5 @@
-use surrealdb::error::Db::RelateStatement;
-use surrealdb::sql::Subquery::Relate;
+use surrealdb::opt::RecordId;
+use surrealdb_id::relation::Relation;
 use crate::serialize::SurrealSerialize;
 
 /// Generate statement that include id and combo of set statements for each struct fields
@@ -100,4 +100,21 @@ pub fn val<T> (target: &T) -> String where surrealdb::sql::Value: From<T>, T: Cl
 
 pub fn duration<T> (target: &T) -> String where surrealdb::sql::Duration: From<T>, T: Clone {
     surrealdb::sql::Value::Duration(surrealdb::sql::Duration::from(target.clone())).to_string()
+}
+
+pub fn relate<T, I, O>(target: &Relation<T, I, O>) -> String where
+    T: Sized + Clone + Into<surrealdb::opt::RecordId>,
+    I: Sized + Clone + Into<surrealdb::opt::RecordId> + SurrealSerialize,
+    O: Sized + Clone + Into<surrealdb::opt::RecordId>
+{
+    let record_id: surrealdb::opt::RecordId = target.relation.clone().into();
+    let in_id: RecordId = target.r#in.clone().unwrap().into();
+    let out_id: RecordId = target.out.clone().unwrap().into();
+
+    return format!(
+        "RELATE {} -> {} -> {} {}",
+        in_id.to_string(),
+        record_id.tb,
+        out_id.to_string(),
+        set(&target.relation))
 }

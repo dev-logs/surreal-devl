@@ -1,11 +1,11 @@
 [package]
 name = "surreal_devl"
-version = "1.0.4"
+version = "1.0.5"
 edition = "2021"
 description = "Contains core logic of surreal derive"
 readme = "README.md"
 repository = "https://github.com/dev-logs/surreal-devl"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 keywords = ["surreal", "surrealdb", "db", "query-builder"]
 
 [package.metadata]
@@ -25,3 +25,11 @@ surreal_warn_log_macro = "println"
 [dependencies]
 surrealdb = { version = "1.0.0", default-features = false }
 cargo_metadata = "0.18.1"
+surrealdb_id = "0.1.1"
+serde = { version = "1.0.197", features = ["derive"] }
+
+[dev-dependencies]
+chrono = "0.4.35"
+serde = { version = "1.0.118", features = ["derive"] }
+serde_json = "1.0.107"
+tokio = "1.36.0"
