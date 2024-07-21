@@ -140,7 +140,7 @@ impl QueryResult<SurrealQR> for usize {
         Ok(SurrealQR(response.take::<Value>(0)?))
     }
 
-    fn stats(&self, response: &QueryResponse) -> Option<Stats> {
+    fn stats(&self, _: &QueryResponse) -> Option<Stats> {
         None
     }
 }
