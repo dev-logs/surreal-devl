@@ -7,7 +7,7 @@ use surrealdb::sql::{
 use surrealdb::Response as QueryResponse;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SurrealQR(Value);
+pub struct SurrealQR(pub Value);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SurrealResponseError {
@@ -24,6 +24,12 @@ pub enum SurrealResponseError {
     ExpectedABytes,
     ExpectedASet,
     UnexpectedValueType,
+    OutOfRange
+}
+
+pub enum QlPath<'a> {
+    Index(i32),
+    Field(&'a str)
 }
 
 impl SurrealQR {
@@ -37,6 +43,46 @@ impl SurrealQR {
 
     pub fn is_none(&self) -> bool {
         return self.0.is_none_or_null()
+    }
+
+    pub fn get(self, path: QlPath) -> Result<Self, SurrealResponseError> {
+        if self.is_none() {
+            return Ok(self);
+        }
+
+        match path {
+            QlPath::Index(index) => {
+                let array = self.array()?;
+                if None == array {
+                    return Ok(Self(Value::None));
+                }
+                else {
+                    let mut array = array.unwrap().to_owned();
+                    if array.len() - 1 < index as usize {
+                        return Err(SurrealResponseError::OutOfRange)
+                    }
+
+                    let value = array.remove(index as usize);
+                    return Ok(Self(value));
+                }
+            },
+            QlPath::Field(field) => {
+                let object = self.object()?;
+                if None == object {
+                    return Ok(Self(Value::None));
+                }
+                else {
+                    let object = object.unwrap();
+                    let value = object.get(field);
+                    if None == value {
+                        return Ok(Self(Value::None));
+                    }
+                    else {
+                       return Ok(Self(value.unwrap().to_owned()));
+                    }
+                }
+            },
+        }
     }
 
     pub fn object(self) -> Result<Option<Object>, SurrealResponseError> {
