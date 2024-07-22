@@ -14,6 +14,9 @@ pub enum SurrealResponseError {
     ExpectedAnObject,
     ExpectedAnArray,
     ExpectedANumber,
+    ExpectedANumberI64,
+    ExpectedANumberF64,
+    ExpectedANumberDecimal,
     ExpectedAStrand,
     ExpectedAThing,
     ExpectedADuration,
@@ -177,6 +180,23 @@ impl SurrealQR {
             Value::None => Ok(None),
             Value::Bytes(value) => Ok(Some(value)),
             _ => Err(SurrealResponseError::ExpectedABytes),
+        }
+    }
+
+    pub fn as_i64(self) -> Result<i64, SurrealResponseError> {
+        let number = self.number()?;
+
+        match number {
+            Some(Number::Int(value)) => Ok(value),
+            _ => Err(SurrealResponseError::ExpectedANumberI64)
+        }
+    }
+
+    pub fn as_f64(self) -> Result<f64, SurrealResponseError> {
+        let number = self.number()?;
+        match number {
+            Some(Number::Float(value)) => Ok(value),
+            _ => Err(SurrealResponseError::ExpectedANumberF64)
         }
     }
 }
