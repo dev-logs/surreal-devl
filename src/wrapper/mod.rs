@@ -2,7 +2,17 @@ use serde::{Deserialize, Serialize};
 use surrealdb::method::Stats;
 use surrealdb::opt::QueryResult;
 use surrealdb::sql::{
-    Array, Bytes, Datetime, Duration, Geometry, Number, Object, Strand, Thing, Uuid, Value,
+    Array,
+    Bytes,
+    Datetime,
+    Duration,
+    Geometry,
+    Number,
+    Object,
+    Strand,
+    Thing,
+    Uuid,
+    Value,
 };
 use surrealdb::Response as QueryResponse;
 
@@ -210,3 +220,4 @@ impl QueryResult<SurrealQR> for usize {
         None
     }
 }
+
