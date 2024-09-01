@@ -1,3 +1,6 @@
+use std::ops::{Deref, DerefMut};
+use std::vec;
+
 use serde::{Deserialize, Serialize};
 use surrealdb::method::Stats;
 use surrealdb::opt::QueryResult;
@@ -14,6 +17,7 @@ use surrealdb::sql::{
     Uuid,
     Value,
 };
+
 use surrealdb::Response as QueryResponse;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -211,9 +215,90 @@ impl SurrealQR {
     }
 }
 
+impl Deref for SurrealQR {
+    type Target = Value;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for SurrealQR {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl Into<Value> for SurrealQR {
+    fn into(self) -> Value {
+        self.0
+    }
+}
+
+impl<T> From<SurrealQR> for Vec<T> where T: From<surrealdb::sql::Value> {
+    fn from(value: SurrealQR) -> Self {
+        let value: Value = value.into();
+        let surrealqr = SurrealQR(value);
+        if surrealqr.is_none() {
+            return vec![]
+        }
+
+        let arr = surrealqr.array();
+        if arr.is_err() {
+            return vec![]
+        }
+
+        let mut arr = arr.unwrap();
+        if arr.is_none() {
+            return vec![]
+        }
+
+        arr.take().unwrap().into_iter().map(|it| {
+            T::from(it)
+        }).collect()
+    }
+}
+
+impl<T> From<SurrealQR> for Option<T> where T: From<surrealdb::sql::Value> {
+    fn from(surrealqr: SurrealQR) -> Self {
+        if surrealqr.is_none() {
+            return Self::None
+        }
+
+        if surrealqr.is_array() {
+            let array = surrealqr.array().unwrap();
+            if array.is_none() {
+                return None;
+            }
+
+            let mut array = array.unwrap();
+            if array.is_empty() {
+                return None;
+            }
+
+            let obj = array.swap_remove(0);
+            return Some(obj.into());
+        }
+
+        if surrealqr.is_object() {
+            let object = surrealqr.object();
+            let object = object.unwrap();
+            if object.is_none() {
+                return None;
+            }
+            else {
+                return Self::Some(Value::Object(object.unwrap()).into())
+            }
+        }
+
+        let value: Value = surrealqr.into();
+        Self::Some(value.into())
+    }
+}
+
 impl QueryResult<SurrealQR> for usize {
     fn query_result(self, response: &mut QueryResponse) -> surrealdb::Result<SurrealQR> {
-        Ok(SurrealQR(response.take::<Value>(0)?))
+        Ok(SurrealQR(response.take::<Value>(self)?))
     }
 
     fn stats(&self, _: &QueryResponse) -> Option<Stats> {
