@@ -23,3 +23,9 @@ pub trait SurrealSerialize where Self: Sized + Into<RecordId> + Clone {
         }).collect::<Vec<String>>().join(",")
     }
 }
+
+impl<'a, T> SurrealSerialize for &'a T where T: SurrealSerialize, surrealdb::sql::Thing: From<&'a T> {
+    fn into_idiom_value(&self) -> Vec<(surrealdb::sql::Idiom, surrealdb::sql::Value)> {
+        T::into_idiom_value(&self)
+    }
+}
