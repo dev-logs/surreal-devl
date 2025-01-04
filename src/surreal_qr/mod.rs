@@ -5,17 +5,7 @@ use serde::{Deserialize, Serialize};
 use surrealdb::method::Stats;
 use surrealdb::opt::QueryResult;
 use surrealdb::sql::{
-    Array,
-    Bytes,
-    Datetime,
-    Duration,
-    Geometry,
-    Number,
-    Object,
-    Strand,
-    Thing,
-    Uuid,
-    Value,
+    Array, Bytes, Datetime, Duration, Geometry, Number, Object, Strand, Thing, Uuid, Value,
 };
 
 use surrealdb::Response as QueryResponse;
@@ -41,12 +31,12 @@ pub enum SurrealResponseError {
     ExpectedABytes,
     ExpectedASet,
     UnexpectedValueType,
-    OutOfRange
+    OutOfRange,
 }
 
-pub enum QlPath<'a> {
+pub enum RPath<'a> {
     Index(i32),
-    Field(&'a str)
+    Field(&'a str),
 }
 
 impl SurrealQR {
@@ -54,51 +44,48 @@ impl SurrealQR {
         match self.0 {
             Value::None => None,
             Value::Null => None,
-            _ => Some(self)
+            _ => Some(self),
         }
     }
 
     pub fn is_none(&self) -> bool {
-        return self.0.is_none_or_null()
+        return self.0.is_none_or_null();
     }
 
-    pub fn get(self, path: QlPath) -> Result<Self, SurrealResponseError> {
+    pub fn get(self, path: RPath) -> Result<Self, SurrealResponseError> {
         if self.is_none() {
             return Ok(self);
         }
 
         match path {
-            QlPath::Index(index) => {
+            RPath::Index(index) => {
                 let array = self.array()?;
                 if None == array {
                     return Ok(Self(Value::None));
-                }
-                else {
+                } else {
                     let mut array = array.unwrap().to_owned();
                     if array.len() - 1 < index as usize {
-                        return Err(SurrealResponseError::OutOfRange)
+                        return Err(SurrealResponseError::OutOfRange);
                     }
 
                     let value = array.remove(index as usize);
                     return Ok(Self(value));
                 }
-            },
-            QlPath::Field(field) => {
+            }
+            RPath::Field(field) => {
                 let object = self.object()?;
                 if None == object {
                     return Ok(Self(Value::None));
-                }
-                else {
+                } else {
                     let object = object.unwrap();
                     let value = object.get(field);
                     if None == value {
                         return Ok(Self(Value::None));
-                    }
-                    else {
-                       return Ok(Self(value.unwrap().to_owned()));
+                    } else {
+                        return Ok(Self(value.unwrap().to_owned()));
                     }
                 }
-            },
+            }
         }
     }
 
@@ -112,7 +99,7 @@ impl SurrealQR {
                 } else {
                     Ok(None)
                 }
-            },
+            }
             _ => Err(SurrealResponseError::ExpectedAnObject),
         }
     }
@@ -202,7 +189,7 @@ impl SurrealQR {
 
         match number {
             Some(Number::Int(value)) => Ok(value),
-            _ => Err(SurrealResponseError::ExpectedANumberI64)
+            _ => Err(SurrealResponseError::ExpectedANumberI64),
         }
     }
 
@@ -210,7 +197,7 @@ impl SurrealQR {
         let number = self.number()?;
         match number {
             Some(Number::Float(value)) => Ok(value),
-            _ => Err(SurrealResponseError::ExpectedANumberF64)
+            _ => Err(SurrealResponseError::ExpectedANumberF64),
         }
     }
 }
@@ -235,34 +222,42 @@ impl Into<Value> for SurrealQR {
     }
 }
 
-impl<T> From<SurrealQR> for Vec<T> where T: From<surrealdb::sql::Value> {
+impl<T> From<SurrealQR> for Vec<T>
+where
+    T: From<surrealdb::sql::Value>,
+{
     fn from(value: SurrealQR) -> Self {
         let value: Value = value.into();
         let surrealqr = SurrealQR(value);
         if surrealqr.is_none() {
-            return vec![]
+            return vec![];
         }
 
         let arr = surrealqr.array();
         if arr.is_err() {
-            return vec![]
+            return vec![];
         }
 
         let mut arr = arr.unwrap();
         if arr.is_none() {
-            return vec![]
+            return vec![];
         }
 
-        arr.take().unwrap().into_iter().map(|it| {
-            T::from(it)
-        }).collect()
+        arr.take()
+            .unwrap()
+            .into_iter()
+            .map(|it| T::from(it))
+            .collect()
     }
 }
 
-impl<T> From<SurrealQR> for Option<T> where T: From<surrealdb::sql::Value> {
+impl<T> From<SurrealQR> for Option<T>
+where
+    T: From<surrealdb::sql::Value>,
+{
     fn from(surrealqr: SurrealQR) -> Self {
         if surrealqr.is_none() {
-            return Self::None
+            return Self::None;
         }
 
         if surrealqr.is_array() {
@@ -285,9 +280,8 @@ impl<T> From<SurrealQR> for Option<T> where T: From<surrealdb::sql::Value> {
             let object = object.unwrap();
             if object.is_none() {
                 return None;
-            }
-            else {
-                return Self::Some(Value::Object(object.unwrap()).into())
+            } else {
+                return Self::Some(Value::Object(object.unwrap()).into());
             }
         }
 
@@ -296,13 +290,15 @@ impl<T> From<SurrealQR> for Option<T> where T: From<surrealdb::sql::Value> {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct User {}
+
 impl QueryResult<SurrealQR> for usize {
     fn query_result(self, response: &mut QueryResponse) -> surrealdb::Result<SurrealQR> {
-        Ok(SurrealQR(response.take::<Value>(self)?))
+        Ok(response.take(self)?)
     }
 
     fn stats(&self, _: &QueryResponse) -> Option<Stats> {
         None
     }
 }
-

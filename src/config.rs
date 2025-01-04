@@ -6,7 +6,7 @@ pub struct SurrealDeriveConfig {
     pub enable_log: bool,
     pub enable_compile_log: bool,
     pub namespace: String,
-    pub info_log_macro: String
+    pub info_log_macro: String,
 }
 
 impl Default for SurrealDeriveConfig {
@@ -16,7 +16,7 @@ impl Default for SurrealDeriveConfig {
             enable_log: false,
             enable_compile_log: false,
             namespace: "surreal-ql".to_string(),
-            info_log_macro: "println".to_string()
+            info_log_macro: "println".to_string(),
         }
     }
 }

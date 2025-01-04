@@ -34,7 +34,7 @@ pub fn camel_to_snake_case(var_name: &str) -> String {
 }
 
 #[cfg(test)]
-mod test{
+mod test {
     use super::*;
 
     #[test]

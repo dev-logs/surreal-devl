@@ -1,6 +1,8 @@
-pub mod serialize;
-pub mod surreal_statement;
 pub mod config;
 pub mod naming_convention;
-mod surreal_db_id;
-pub mod wrapper;
+pub mod proxy;
+pub mod serialize;
+pub mod surreal_edge;
+pub mod surreal_id;
+pub mod surreal_qr;
+pub mod surreal_statement;
