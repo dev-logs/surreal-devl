@@ -10,6 +10,9 @@ use surrealdb::sql::{
 
 use surrealdb::Response as QueryResponse;
 
+use crate::config::SurrealDeriveConfig;
+use crate::proxy::default::SurrealDeserializer;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SurrealQR(pub Value);
 
@@ -87,6 +90,10 @@ impl SurrealQR {
                 }
             }
         }
+    }
+
+    pub fn deserialize<T>(self) -> Option<T> where T: SurrealDeserializer {
+        Some(SurrealDeserializer::deserialize(&self.0))
     }
 
     pub fn object(self) -> Result<Option<Object>, SurrealResponseError> {
@@ -290,8 +297,7 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct User {}
+pub struct SurrealQRResult {}
 
 impl QueryResult<SurrealQR> for usize {
     fn query_result(self, response: &mut QueryResponse) -> surrealdb::Result<SurrealQR> {
