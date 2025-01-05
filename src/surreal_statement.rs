@@ -1,7 +1,9 @@
+use surrealdb::sql::Thing;
+
+use crate::proxy::default::SurrealSerializer;
 use crate::serialize::SurrealSerialize;
 use crate::surreal_edge::Edge;
 use crate::surreal_id::SurrealId;
-use surrealdb::sql::Thing;
 
 pub fn record<T>(target: &T) -> String
 where
@@ -35,22 +37,13 @@ where
     target.into_content_expression()
 }
 
-pub fn date<T>(target: &T) -> String
-where
-    surrealdb::sql::Datetime: From<T>,
-    T: Clone,
-{
-    surrealdb::sql::Datetime::from(target.clone()).to_string()
-}
-
 pub fn array<T>(target: &[T]) -> String
 where
-    surrealdb::sql::Value: From<T>,
-    T: Clone,
+    T: SurrealSerializer + Clone
 {
     let array_value: Vec<surrealdb::sql::Value> = target
-        .iter()
-        .map(|v| surrealdb::sql::Value::from(v.clone()))
+        .into_iter()
+        .map(|v| v.clone().serialize())
         .collect();
 
     surrealdb::sql::Array::from(array_value).to_string()
@@ -58,18 +51,10 @@ where
 
 pub fn val<T>(target: &T) -> String
 where
-    surrealdb::sql::Value: From<T>,
+    T: SurrealSerializer,
     T: Clone,
 {
-    surrealdb::sql::Value::from(target.clone()).to_string()
-}
-
-pub fn duration<T>(target: &T) -> String
-where
-    surrealdb::sql::Duration: From<T>,
-    T: Clone,
-{
-    surrealdb::sql::Value::Duration(surrealdb::sql::Duration::from(target.clone())).to_string()
+    target.clone().serialize().to_string()
 }
 
 pub fn relate<I, R, O>(target: &Edge<I, R, O>) -> String
@@ -93,8 +78,9 @@ where
     format!(
         "RELATE {} -> {} -> {} {}",
         in_id.to_string(),
-        record_id.tb,
+        record_id,
         out_id.to_string(),
         set(&target.data)
     )
 }
+

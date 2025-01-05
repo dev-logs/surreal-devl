@@ -1,3 +1,4 @@
+use crate::proxy::default::SurrealDeserializer;
 use crate::serialize::SurrealSerialize;
 use crate::surreal_id::{Link, SurrealId};
 use serde::{Deserialize, Serialize};
@@ -124,22 +125,22 @@ where
     }
 }
 
-impl<I, R, O> From<Value> for Edge<I, R, O>
+impl<I, R, O> SurrealDeserializer for Edge<I, R, O>
 where
-    R: SurrealSerialize + SurrealId,
-    I: SurrealId,
-    O: SurrealId,
+    R: SurrealSerialize + SurrealId + SurrealDeserializer,
+    I: SurrealId + SurrealDeserializer,
+    O: SurrealId + SurrealDeserializer,
 {
-    fn from(value: Value) -> Self {
+    fn deserialize(value: &Value) -> Self {
         match value {
             Value::Object(obj) => {
                 let in_value = obj.get("in");
                 let out_value = obj.get("out");
 
                 Self {
-                    r#in: in_value.clone().to_owned().map(|it| it.to_owned().into()),
-                    r#out: out_value.clone().map(|it| it.to_owned().into()),
-                    data: Value::from(obj).into(),
+                    r#in: in_value.clone().to_owned().map(|it| SurrealDeserializer::deserialize(it)),
+                    r#out: out_value.clone().map(|it| SurrealDeserializer::deserialize(it)),
+                    data: SurrealDeserializer::deserialize(&Value::Object(obj.clone())),
                 }
             }
             _ => {
@@ -148,3 +149,4 @@ where
         }
     }
 }
+
