@@ -3,24 +3,21 @@ use std::time::Duration;
 use surrealdb::sql::Value;
 use uuid::Uuid;
 
+use crate::surreal_qr::SurrealResponseError;
+
 pub trait SurrealSerializer {
     fn serialize(self) -> Value;
 }
 
 pub trait SurrealDeserializer where Self: Sized {
-    fn from_option(value: Option<&Value>) -> Self {
+    fn from_option(value: Option<&Value>) -> Result<Self, SurrealResponseError> {
         match value {
             None => Self::deserialize(&Value::None),
             Some(value) => Self::deserialize(value)
         }
     }
 
-    fn deserialize(value: &Value) -> Self;
-}
-
-pub fn test() {
-    let val: Option<i32> = <Option::<i32> as SurrealDeserializer>::from_option(Some(&Value::None));
-    let val2 = <i32 as SurrealSerializer>::serialize(val.unwrap());
+    fn deserialize(value: &Value) -> Result<Self, SurrealResponseError>;
 }
 
 impl SurrealSerializer for i32 {
@@ -30,12 +27,11 @@ impl SurrealSerializer for i32 {
 }
 
 impl SurrealDeserializer for i32 {
-    fn deserialize(value: &Value) -> i32 {
+    fn deserialize(value: &Value) -> Result<i32, SurrealResponseError> {
         if let Value::Number(n) = value {
-            n.as_int() as i32
-        }
-        else {
-            panic!("")     
+            Ok(n.as_int() as i32)
+        } else {
+            Err(SurrealResponseError::ExpectedANumberI64)
         }
     }
 }
@@ -47,11 +43,11 @@ impl SurrealSerializer for i64 {
 }
 
 impl SurrealDeserializer for i64 {
-    fn deserialize(value: &Value) -> i64 {
+    fn deserialize(value: &Value) -> Result<i64, SurrealResponseError> {
         if let Value::Number(n) = value {
-            n.as_int()
+            Ok(n.as_int())
         } else {
-            0
+            Err(SurrealResponseError::ExpectedANumberI64)
         }
     }
 }
@@ -63,11 +59,11 @@ impl SurrealSerializer for f32 {
 }
 
 impl SurrealDeserializer for f32 {
-    fn deserialize(value: &Value) -> f32 {
+    fn deserialize(value: &Value) -> Result<f32, SurrealResponseError> {
         if let Value::Number(n) = value {
-            n.as_float() as f32
+            Ok(n.as_float() as f32)
         } else {
-            0.0
+            Err(SurrealResponseError::ExpectedANumberF64)
         }
     }
 }
@@ -79,11 +75,11 @@ impl SurrealSerializer for f64 {
 }
 
 impl SurrealDeserializer for f64 {
-    fn deserialize(value: &Value) -> f64 {
+    fn deserialize(value: &Value) -> Result<f64, SurrealResponseError> {
         if let Value::Number(n) = value {
-            n.as_float()
+            Ok(n.as_float())
         } else {
-            0.0
+            Err(SurrealResponseError::ExpectedANumberF64)
         }
     }
 }
@@ -95,11 +91,11 @@ impl SurrealSerializer for bool {
 }
 
 impl SurrealDeserializer for bool {
-    fn deserialize(value: &Value) -> bool {
+    fn deserialize(value: &Value) -> Result<bool, SurrealResponseError> {
         if let Value::Bool(b) = value {
-            *b
+            Ok(*b)
         } else {
-            false
+            Err(SurrealResponseError::ExpectedABool)
         }
     }
 }
@@ -117,11 +113,11 @@ impl<T> SurrealDeserializer for Vec<T>
 where
     T: SurrealDeserializer,
 {
-    fn deserialize(value: &Value) -> Vec<T> {
+    fn deserialize(value: &Value) -> Result<Vec<T>, SurrealResponseError> {
         if let Value::Array(array) = value {
             array.iter().map(T::deserialize).collect()
         } else {
-            Vec::new()
+            Err(SurrealResponseError::ExpectedAnArray)
         }
     }
 }
@@ -142,11 +138,11 @@ impl<T> SurrealDeserializer for Option<T>
 where
     T: SurrealDeserializer,
 {
-    fn deserialize(value: &Value) -> Option<T> {
+    fn deserialize(value: &Value) -> Result<Option<T>, SurrealResponseError> {
         if value.is_none() {
-            None
+            Ok(None)
         } else {
-            Some(T::deserialize(value))
+            Ok(Some(T::deserialize(value)?))
         }
     }
 }
@@ -159,11 +155,11 @@ impl SurrealSerializer for String {
 }
 
 impl SurrealDeserializer for String {
-    fn deserialize(value: &Value) -> String {
+    fn deserialize(value: &Value) -> Result<String, SurrealResponseError> {
         if let Value::Strand(s) = value {
-            s.0.clone()
+            Ok(s.0.clone())
         } else {
-            "".to_owned()
+            Err(SurrealResponseError::ExpectedAStrand)
         }
     }
 }
@@ -176,11 +172,11 @@ impl SurrealSerializer for Uuid {
 }
 
 impl SurrealDeserializer for Uuid {
-    fn deserialize(value: &Value) -> Uuid {
+    fn deserialize(value: &Value) -> Result<Uuid, SurrealResponseError> {
         if let Value::Uuid(uuid) = value {
-            uuid.0
+            Ok(uuid.0)
         } else {
-            Uuid::nil()
+            Err(SurrealResponseError::ExpectedAUuid)
         }
     }
 }
@@ -192,12 +188,11 @@ impl SurrealSerializer for Duration {
 }
 
 impl SurrealDeserializer for Duration {
-    fn deserialize(value: &Value) -> Duration {
+    fn deserialize(value: &Value) -> Result<Duration, SurrealResponseError> {
         if let Value::Duration(duration) = value {
-            duration.0
-        }
-        else {
-            Duration::default()
+            Ok(duration.0)
+        } else {
+            Err(SurrealResponseError::ExpectedADuration)
         }
     }
 }
@@ -210,11 +205,11 @@ impl SurrealSerializer for DateTime<Utc> {
 }
 
 impl SurrealDeserializer for DateTime<Utc> {
-    fn deserialize(value: &Value) -> DateTime<Utc> {
+    fn deserialize(value: &Value) -> Result<DateTime<Utc>, SurrealResponseError> {
         if let Value::Datetime(datetime) = value {
-            datetime.0
+            Ok(datetime.0)
         } else {
-            Utc::now()
+            Err(SurrealResponseError::ExpectedADatetime)
         }
     }
 }
@@ -232,8 +227,7 @@ impl<T> SurrealDeserializer for Box<T>
 where
     T: SurrealDeserializer,
 {
-    fn deserialize(value: &Value) -> Box<T> {
-        Box::new(T::deserialize(value))
+    fn deserialize(value: &Value) -> Result<Box<T>, SurrealResponseError> {
+        Ok(Box::new(T::deserialize(value)?))
     }
 }
-

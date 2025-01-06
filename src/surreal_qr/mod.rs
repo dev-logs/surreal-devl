@@ -10,7 +10,6 @@ use surrealdb::sql::{
 
 use surrealdb::Response as QueryResponse;
 
-use crate::config::SurrealDeriveConfig;
 use crate::proxy::default::SurrealDeserializer;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,10 +89,6 @@ impl SurrealQR {
                 }
             }
         }
-    }
-
-    pub fn deserialize<T>(self) -> Option<T> where T: SurrealDeserializer {
-        Some(SurrealDeserializer::deserialize(&self.0))
     }
 
     pub fn object(self) -> Result<Option<Object>, SurrealResponseError> {
@@ -229,71 +224,70 @@ impl Into<Value> for SurrealQR {
     }
 }
 
-impl<T> From<SurrealQR> for Vec<T>
+impl<T> TryFrom<SurrealQR> for Vec<T>
 where
-    T: From<surrealdb::sql::Value>,
+    T: SurrealDeserializer,
 {
-    fn from(value: SurrealQR) -> Self {
-        let value: Value = value.into();
+    type Error = SurrealResponseError;
+    fn try_from(value: SurrealQR) -> Result<Self, Self::Error> {
+        if value.is_none() {
+            return Ok(vec![]);
+        }
+
+        let value: Value = value.0;
         let surrealqr = SurrealQR(value);
-        if surrealqr.is_none() {
-            return vec![];
-        }
+        let mut arr = surrealqr.array()?;
 
-        let arr = surrealqr.array();
-        if arr.is_err() {
-            return vec![];
-        }
-
-        let mut arr = arr.unwrap();
         if arr.is_none() {
-            return vec![];
+            return Ok(vec![]);
         }
 
-        arr.take()
-            .unwrap()
-            .into_iter()
-            .map(|it| T::from(it))
-            .collect()
+        let mut result = Vec::new();
+        for item in arr.take().unwrap().into_iter() {
+            result.push(T::deserialize(&item)?);
+        }
+
+        Ok(result)
     }
 }
 
-impl<T> From<SurrealQR> for Option<T>
+impl<T> TryFrom<SurrealQR> for Option<T>
 where
-    T: From<surrealdb::sql::Value>,
+    T: SurrealDeserializer,
 {
-    fn from(surrealqr: SurrealQR) -> Self {
+    type Error = SurrealResponseError;
+    fn try_from(surrealqr: SurrealQR) -> Result<Self, Self::Error> {
         if surrealqr.is_none() {
-            return Self::None;
+            return Ok(None);
         }
 
         if surrealqr.is_array() {
-            let array = surrealqr.array().unwrap();
+            let array = surrealqr.array()?;
             if array.is_none() {
-                return None;
+                return Ok(None);
             }
 
             let mut array = array.unwrap();
             if array.is_empty() {
-                return None;
+                return Ok(None);
             }
 
             let obj = array.swap_remove(0);
-            return Some(obj.into());
+            return Ok(Some(T::deserialize(&obj)?));
         }
 
         if surrealqr.is_object() {
             let object = surrealqr.object();
             let object = object.unwrap();
             if object.is_none() {
-                return None;
+                return Ok(None);
             } else {
-                return Self::Some(Value::Object(object.unwrap()).into());
+                return Ok(Self::Some(T::deserialize(&Value::Object(object.unwrap()))?));
             }
         }
 
         let value: Value = surrealqr.into();
-        Self::Some(value.into())
+        Ok(Self::Some(T::deserialize(&value)?))
     }
 }
 

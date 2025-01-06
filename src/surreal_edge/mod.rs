@@ -1,6 +1,7 @@
 use crate::proxy::default::SurrealDeserializer;
 use crate::serialize::SurrealSerialize;
 use crate::surreal_id::{Link, SurrealId};
+use crate::surreal_qr::SurrealResponseError;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use surrealdb::sql::{Idiom, Thing, Value};
@@ -131,17 +132,23 @@ where
     I: SurrealId + SurrealDeserializer,
     O: SurrealId + SurrealDeserializer,
 {
-    fn deserialize(value: &Value) -> Self {
+    fn deserialize(value: &Value) -> Result<Self, SurrealResponseError> {
         match value {
             Value::Object(obj) => {
                 let in_value = obj.get("in");
                 let out_value = obj.get("out");
 
-                Self {
-                    r#in: in_value.clone().to_owned().map(|it| SurrealDeserializer::deserialize(it)),
-                    r#out: out_value.clone().map(|it| SurrealDeserializer::deserialize(it)),
-                    data: SurrealDeserializer::deserialize(&Value::Object(obj.clone())),
-                }
+                Ok(Self {
+                    r#in: match in_value {
+                        Some(value) => Some(SurrealDeserializer::deserialize(value)?),
+                        None => None,
+                    },
+                    r#out: match out_value {
+                        Some(value) => Some(SurrealDeserializer::deserialize(value)?),
+                        None => None,
+                    },
+                    data: SurrealDeserializer::deserialize(&Value::Object(obj.clone()))?,
+                })
             }
             _ => {
                 panic!("Expected edge must be an object")
