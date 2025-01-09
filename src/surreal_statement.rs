@@ -39,12 +39,10 @@ where
 
 pub fn array<T>(target: &[T]) -> String
 where
-    T: SurrealSerializer + Clone
+    T: SurrealSerializer + Clone,
 {
-    let array_value: Vec<surrealdb::sql::Value> = target
-        .into_iter()
-        .map(|v| v.clone().serialize())
-        .collect();
+    let array_value: Vec<surrealdb::sql::Value> =
+        target.into_iter().map(|v| v.clone().serialize()).collect();
 
     surrealdb::sql::Array::from(array_value).to_string()
 }
@@ -83,4 +81,3 @@ where
         set(&target.data)
     )
 }
-

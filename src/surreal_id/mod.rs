@@ -1,8 +1,11 @@
-use std::ops::Deref;
 use serde::{Deserialize, Serialize};
+use std::ops::Deref;
 use surrealdb::sql::{Thing, Value};
 
-use crate::{proxy::default::{SurrealDeserializer, SurrealSerializer}, surreal_qr::SurrealResponseError};
+use crate::{
+    proxy::default::{SurrealDeserializer, SurrealSerializer},
+    surreal_qr::SurrealResponseError,
+};
 
 pub trait SurrealId {
     fn id(&self) -> Thing;
@@ -99,7 +102,23 @@ where
         if let Value::Thing(thing) = value {
             Ok(Link::Id(thing.clone()))
         } else {
-            Ok(Link::Record(T::deserialize(value)?))
+            let object = match &value {
+                Value::Object(obj) => obj.clone(),
+                Value::Array(arr) => {
+                    if arr.len() != 1 {
+                        return Err(
+                            SurrealResponseError::ExpectedAnArrayWith1ItemToDeserializeToObject,
+                        );
+                    } else if let Some(Value::Object(obj)) = arr.0.first() {
+                        obj.clone()
+                    } else {
+                        return Err(SurrealResponseError::ExpectedAnObject);
+                    }
+                }
+                _ => return Err(SurrealResponseError::ExpectedAnObject),
+            };
+
+            Ok(Link::Record(T::deserialize(&Value::Object(object))?))
         }
     }
 }

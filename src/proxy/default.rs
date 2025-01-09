@@ -9,11 +9,14 @@ pub trait SurrealSerializer {
     fn serialize(self) -> Value;
 }
 
-pub trait SurrealDeserializer where Self: Sized {
+pub trait SurrealDeserializer
+where
+    Self: Sized,
+{
     fn from_option(value: Option<&Value>) -> Result<Self, SurrealResponseError> {
         match value {
             None => Self::deserialize(&Value::None),
-            Some(value) => Self::deserialize(value)
+            Some(value) => Self::deserialize(value),
         }
     }
 
@@ -142,7 +145,14 @@ where
         if value.is_none() {
             Ok(None)
         } else {
-            Ok(Some(T::deserialize(value)?))
+            let result = T::deserialize(value);
+            match result {
+                Ok(it) => Ok(Some(it)),
+                Err(e) => match e {
+                    SurrealResponseError::CannotReadNoneValue => Ok(None),
+                    e => Err(e),
+                },
+            }
         }
     }
 }
