@@ -1,5 +1,7 @@
+use crate::proxy::default::{SurrealDeserializer, SurrealSerializer};
 use crate::serialize::SurrealSerialize;
 use crate::surreal_id::{Link, SurrealId};
+use crate::surreal_qr::SurrealResponseError;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use surrealdb::sql::{Idiom, Thing, Value};
@@ -15,6 +17,17 @@ where
     pub out: Option<Link<O>>,
     #[serde(flatten)]
     pub data: R,
+}
+
+impl<I, R, O> PartialEq for Edge<I, R, O>
+where
+    R: PartialEq + SurrealSerialize + SurrealId,
+    I: SurrealId,
+    O: SurrealId,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
+    }
 }
 
 impl<I, R, O> Deref for Edge<I, R, O>
@@ -124,27 +137,53 @@ where
     }
 }
 
-impl<I, R, O> From<Value> for Edge<I, R, O>
+impl<I, R, O> SurrealSerializer for Edge<I, R, O>
 where
     R: SurrealSerialize + SurrealId,
     I: SurrealId,
     O: SurrealId,
 {
-    fn from(value: Value) -> Self {
-        match value {
-            Value::Object(obj) => {
-                let in_value = obj.get("in");
-                let out_value = obj.get("out");
+    fn serialize(self) -> Value {
+        Value::from(self.data.id())
+    }
+}
 
-                Self {
-                    r#in: in_value.clone().to_owned().map(|it| it.to_owned().into()),
-                    r#out: out_value.clone().map(|it| it.to_owned().into()),
-                    data: Value::from(obj).into(),
+impl<I, R, O> SurrealDeserializer for Edge<I, R, O>
+where
+    R: SurrealSerialize + SurrealId + SurrealDeserializer,
+    I: SurrealId + SurrealDeserializer,
+    O: SurrealId + SurrealDeserializer,
+{
+    fn deserialize(value: &Value) -> Result<Self, SurrealResponseError> {
+        let object = match value {
+            Value::Object(obj) => obj,
+            Value::Array(arr) => {
+                if arr.len() != 1 {
+                    return Err(
+                        SurrealResponseError::ExpectedAnArrayWith1ItemToDeserializeToObject,
+                    );
+                } else if let Some(Value::Object(obj)) = arr.0.first() {
+                    obj
+                } else {
+                    return Err(SurrealResponseError::ExpectedAnObject);
                 }
             }
-            _ => {
-                panic!("Expected edge must be an object")
-            }
-        }
+            _ => return Err(SurrealResponseError::ExpectedAnObject),
+        };
+
+        let in_value = object.get("in");
+        let out_value = object.get("out");
+
+        Ok(Self {
+            r#in: match in_value {
+                Some(value) => Some(SurrealDeserializer::deserialize(value)?),
+                None => None,
+            },
+            r#out: match out_value {
+                Some(value) => Some(SurrealDeserializer::deserialize(value)?),
+                None => None,
+            },
+            data: SurrealDeserializer::deserialize(&Value::Object(object.clone()))?,
+        })
     }
 }

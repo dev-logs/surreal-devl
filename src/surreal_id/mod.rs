@@ -1,10 +1,13 @@
-use crate::proxy::default::{SurrealDeriveCustom, SurrealDeriveProxy};
-use crate::serialize::SurrealSerialize;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use surrealdb::sql::{Idiom, Thing, Value};
+use surrealdb::sql::{Thing, Value};
 
-pub trait SurrealId: From<Value> {
+use crate::{
+    proxy::default::{SurrealDeserializer, SurrealSerializer},
+    surreal_qr::SurrealResponseError,
+};
+
+pub trait SurrealId {
     fn id(&self) -> Thing;
 }
 
@@ -66,28 +69,6 @@ where
     }
 }
 
-impl<T> Into<Value> for Link<T>
-where
-    T: SurrealId,
-{
-    fn into(self) -> Value {
-        Value::Thing(self.id())
-    }
-}
-
-impl<T> From<Value> for Link<T>
-where
-    T: SurrealId,
-{
-    fn from(value: Value) -> Self {
-        match value {
-            Value::Thing(id) => Self::Id(id),
-            Value::Object(obj) => Self::Record(Value::Object(obj).into()),
-            _ => panic!("Expected id or object"),
-        }
-    }
-}
-
 impl<T> Deref for Link<T>
 where
     T: SurrealId,
@@ -104,47 +85,40 @@ where
     }
 }
 
-pub trait NewLink<T, P>
+impl<T> SurrealSerializer for Link<T>
 where
-    T: SurrealId,
+    T: SurrealId + SurrealSerializer,
 {
-    fn new(params: P) -> Link<T>;
+    fn serialize(self) -> Value {
+        Value::from(self.id())
+    }
 }
 
-impl<T> SurrealSerialize for Link<T>
+impl<T> SurrealDeserializer for Link<T>
 where
-    T: SurrealSerialize + SurrealId,
+    T: SurrealId + SurrealDeserializer,
 {
-    fn into_idiom_value(&self) -> Vec<(Idiom, Value)> {
-        match self {
-            Link::Id(i) => vec![(Idiom::from("id".to_string()), Value::from(i.clone()))],
-            Link::Record(r) => r.into_idiom_value(),
+    fn deserialize(value: &Value) -> Result<Link<T>, SurrealResponseError> {
+        if let Value::Thing(thing) = value {
+            Ok(Link::Id(thing.clone()))
+        } else {
+            let object = match &value {
+                Value::Object(obj) => obj.clone(),
+                Value::Array(arr) => {
+                    if arr.len() != 1 {
+                        return Err(
+                            SurrealResponseError::ExpectedAnArrayWith1ItemToDeserializeToObject,
+                        );
+                    } else if let Some(Value::Object(obj)) = arr.0.first() {
+                        obj.clone()
+                    } else {
+                        return Err(SurrealResponseError::ExpectedAnObject);
+                    }
+                }
+                _ => return Err(SurrealResponseError::ExpectedAnObject),
+            };
+
+            Ok(Link::Record(T::deserialize(&Value::Object(object))?))
         }
     }
 }
-
-impl SurrealSerialize for Thing {
-    fn into_idiom_value(&self) -> Vec<(Idiom, Value)> {
-        vec![(Idiom::from("id".to_string()), Value::from(self.clone()))]
-    }
-}
-
-impl<T> Into<SurrealDeriveProxy<Value>> for Link<T>
-where
-    T: SurrealId,
-{
-    fn into(self) -> SurrealDeriveProxy<Value> {
-        SurrealDeriveProxy(self.id().into())
-    }
-}
-
-impl<T> From<SurrealDeriveProxy<Value>> for Link<T>
-where
-    T: SurrealId,
-{
-    fn from(proxy: SurrealDeriveProxy<Value>) -> Self {
-        proxy.0.into()
-    }
-}
-
-impl<T> SurrealDeriveCustom for Link<T> where T: SurrealDeriveCustom + SurrealId {}
