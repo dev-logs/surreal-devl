@@ -15,7 +15,7 @@ use crate::proxy::default::SurrealDeserializer;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SurrealQR(pub Value);
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum SurrealResponseError {
     ExpectedAnObject,
     ExpectedAnArray,
@@ -36,6 +36,9 @@ pub enum SurrealResponseError {
     OutOfRange,
     CannotReadNoneValue,
     ExpectedAnArrayWith1ItemToDeserializeToObject,
+    InvalidEnumFormat,
+    UnknownVariant,
+    NumberOfFieldOfLengthOfDbValueNotMatchLengthOfEnum
 }
 
 impl From<SurrealResponseError> for surrealdb::error::Api {
