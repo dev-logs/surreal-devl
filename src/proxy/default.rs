@@ -39,6 +39,22 @@ impl SurrealDeserializer for i32 {
     }
 }
 
+impl SurrealSerializer for u64 {
+    fn serialize(self) -> Value {
+        Value::from(self)
+    }
+}
+
+impl SurrealDeserializer for u64 {
+    fn deserialize(value: &Value) -> Result<u64, SurrealResponseError> {
+        if let Value::Number(n) = value {
+            Ok(n.as_int() as u64)
+        } else {
+            Err(SurrealResponseError::ExpectedANumberI64)
+        }
+    }
+}
+
 impl SurrealSerializer for i64 {
     fn serialize(self) -> Value {
         Value::from(self)
