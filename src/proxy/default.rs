@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use std::time::Duration;
-use surrealdb::sql::Value;
+use surrealdb::sql::{Thing, Value};
 use uuid::Uuid;
 
 use crate::surreal_qr::SurrealResponseError;
@@ -271,5 +271,33 @@ where
 {
     fn deserialize(value: &Value) -> Result<Box<T>, SurrealResponseError> {
         Ok(Box::new(T::deserialize(value)?))
+    }
+}
+
+impl SurrealSerializer for Thing {
+    fn serialize(self) -> Value {
+        Value::from(self)
+    }
+}
+
+impl SurrealDeserializer for Thing {
+    fn deserialize(value: &Value) -> Result<Thing, SurrealResponseError> {
+        if let Value::Thing(thing) = value {
+            Ok(thing.clone())
+        } else {
+            Err(SurrealResponseError::ExpectedAThing)
+        }
+    }
+}
+
+impl SurrealSerializer for Value {
+    fn serialize(self) -> Value {
+        self
+    }
+}
+
+impl SurrealDeserializer for Value {
+    fn deserialize(value: &Value) -> Result<Value, SurrealResponseError> {
+        Ok(value.clone())
     }
 }

@@ -37,8 +37,9 @@ pub enum SurrealResponseError {
     CannotReadNoneValue,
     ExpectedAnArrayWith1ItemToDeserializeToObject,
     InvalidEnumFormat,
+    TypeEnumMustBeString,
     UnknownVariant,
-    NumberOfFieldOfLengthOfDbValueNotMatchLengthOfEnum
+    NumberOfFieldOfLengthOfDbValueNotMatchLengthOfEnum,
 }
 
 impl From<SurrealResponseError> for surrealdb::error::Api {

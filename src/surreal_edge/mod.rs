@@ -1,15 +1,14 @@
 use crate::proxy::default::{SurrealDeserializer, SurrealSerializer};
-use crate::serialize::SurrealSerialize;
 use crate::surreal_id::{Link, SurrealId};
 use crate::surreal_qr::SurrealResponseError;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use surrealdb::sql::{Idiom, Thing, Value};
+use surrealdb::sql::{Thing, Value};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Edge<I, R, O>
 where
-    R: SurrealSerialize + SurrealId,
+    R: SurrealSerializer + SurrealId,
     I: SurrealId,
     O: SurrealId,
 {
@@ -21,7 +20,7 @@ where
 
 impl<I, R, O> PartialEq for Edge<I, R, O>
 where
-    R: PartialEq + SurrealSerialize + SurrealId,
+    R: PartialEq + SurrealSerializer + SurrealId,
     I: SurrealId,
     O: SurrealId,
 {
@@ -32,7 +31,7 @@ where
 
 impl<I, R, O> Deref for Edge<I, R, O>
 where
-    R: SurrealSerialize + SurrealId,
+    R: SurrealSerializer + SurrealId,
     I: SurrealId,
     O: SurrealId,
 {
@@ -43,35 +42,9 @@ where
     }
 }
 
-impl<I, R, O> SurrealSerialize for Edge<I, R, O>
-where
-    I: SurrealId + Clone,
-    R: SurrealSerialize + Clone + SurrealId,
-    O: SurrealId + Clone,
-{
-    fn into_idiom_value(&self) -> Vec<(Idiom, Value)> {
-        let mut result: Vec<(Idiom, Value)> = vec![];
-
-        result.push((
-            Idiom::from("in".to_string()),
-            Value::from(
-                self.r#in
-                    .clone()
-                    .map(|it| Value::from(Into::<Thing>::into(it))),
-            ),
-        ));
-        self.data.clone().into_idiom_value();
-
-        let mut data = self.data.clone().into_idiom_value();
-        result.append(&mut data);
-
-        result
-    }
-}
-
 pub trait IntoRelation<I, O>
 where
-    Self: SurrealSerialize + SurrealId,
+    Self: SurrealSerializer + SurrealId + Sized,
     I: SurrealId,
     O: SurrealId,
 {
@@ -80,7 +53,7 @@ where
 
 impl<I, R, O> IntoRelation<I, O> for R
 where
-    R: SurrealSerialize + SurrealId,
+    R: SurrealSerializer + SurrealId,
     I: SurrealId,
     O: SurrealId,
 {
@@ -95,7 +68,7 @@ where
 
 impl<I, R, O> Into<Thing> for Edge<I, R, O>
 where
-    R: SurrealSerialize + SurrealId,
+    R: SurrealSerializer + SurrealId,
     I: SurrealId,
     O: SurrealId,
 {
@@ -106,7 +79,7 @@ where
 
 impl<I, R, O> Into<Value> for Edge<I, R, O>
 where
-    R: SurrealSerialize + SurrealId,
+    R: SurrealSerializer + SurrealId,
     I: SurrealId,
     O: SurrealId,
 {
@@ -117,7 +90,7 @@ where
 
 impl<I, R, O> SurrealId for Edge<I, R, O>
 where
-    R: SurrealSerialize + SurrealId,
+    R: SurrealSerializer + SurrealId,
     I: SurrealId,
     O: SurrealId,
 {
@@ -128,7 +101,7 @@ where
 
 impl<I, R, O> Into<Thing> for &Edge<I, R, O>
 where
-    R: SurrealSerialize + SurrealId,
+    R: SurrealSerializer + SurrealId,
     I: SurrealId,
     O: SurrealId,
 {
@@ -139,7 +112,7 @@ where
 
 impl<I, R, O> SurrealSerializer for Edge<I, R, O>
 where
-    R: SurrealSerialize + SurrealId,
+    R: SurrealSerializer + SurrealId,
     I: SurrealId,
     O: SurrealId,
 {
@@ -150,7 +123,7 @@ where
 
 impl<I, R, O> SurrealDeserializer for Edge<I, R, O>
 where
-    R: SurrealSerialize + SurrealId + SurrealDeserializer,
+    R: SurrealSerializer + SurrealId + SurrealDeserializer,
     I: SurrealId + SurrealDeserializer,
     O: SurrealId + SurrealDeserializer,
 {

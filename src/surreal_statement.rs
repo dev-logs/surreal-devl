@@ -1,40 +1,33 @@
-use surrealdb::sql::Thing;
+use surrealdb::sql::{Data, Thing};
 
 use crate::proxy::default::SurrealSerializer;
-use crate::serialize::SurrealSerialize;
 use crate::surreal_edge::Edge;
 use crate::surreal_id::SurrealId;
 
 pub fn record<T>(target: &T) -> String
 where
-    T: SurrealSerialize + SurrealId,
+    T: SurrealSerializer + SurrealId + Clone,
 {
+    let id = target.id();
     format!(
         "{} {}",
-        target.into_id_expression(),
-        target.into_set_expression()
+        id.to_string(),
+        Data::ContentExpression(target.clone().serialize()).to_string()
     )
 }
 
 pub fn id<T>(target: &T) -> String
 where
-    T: SurrealSerialize + SurrealId,
+    T: SurrealId,
 {
-    target.into_id_expression()
-}
-
-pub fn set<T>(target: &T) -> String
-where
-    T: SurrealSerialize,
-{
-    target.into_set_expression()
+    target.id().to_string()
 }
 
 pub fn content<T>(target: &T) -> String
 where
-    T: SurrealSerialize,
+    T: SurrealSerializer + Clone,
 {
-    target.into_content_expression()
+    Data::ContentExpression(target.clone().serialize()).to_string()
 }
 
 pub fn array<T>(target: &[T]) -> String
@@ -57,7 +50,7 @@ where
 
 pub fn relate<I, R, O>(target: &Edge<I, R, O>) -> String
 where
-    R: SurrealSerialize + SurrealId,
+    R: SurrealSerializer + SurrealId + Clone,
     I: SurrealId,
     O: SurrealId,
 {
@@ -78,6 +71,6 @@ where
         in_id.to_string(),
         record_id,
         out_id.to_string(),
-        set(&target.data)
+        Data::ContentExpression(target.data.clone().serialize()).to_string()
     )
 }

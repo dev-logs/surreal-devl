@@ -122,3 +122,9 @@ where
         }
     }
 }
+
+impl SurrealId for Thing {
+    fn id(&self) -> Thing {
+        self.clone()
+    }
+}
