@@ -29,32 +29,25 @@ impl SurrealDeriveConfig {
 
         let mut config = SurrealDeriveConfig::default();
         // always follow the config of root package
-        let root_package = metadata.root_package();
-        if root_package.is_none() {
-            return config;
+        let package_metadata = metadata.root_package()
+            .map(|it| it.metadata.clone())
+            .unwrap_or(metadata.workspace_metadata);
+
+        if let Some(v) = package_metadata["surreal_enable_log"].as_bool() {
+           config.enable_log = v;
         }
-
-        metadata.packages.iter().for_each(|package| {
-            if package.name != root_package.unwrap().name {
-                return;
-            }
-
-            if let Some(v) = package.metadata["surreal_enable_log"].as_bool() {
-                config.enable_log = v;
-            }
-            if let Some(v) = package.metadata["surreal_use_camel_case"].as_bool() {
-                config.use_camel_case = v;
-            }
-            if let Some(v) = package.metadata["surreal_enable_compile_log"].as_bool() {
-                config.enable_compile_log = v;
-            }
-            if let Some(v) = package.metadata["surreal_namespace"].as_str() {
-                config.namespace = v.to_string();
-            }
-            if let Some(v) = package.metadata["surreal_info_log_macro"].as_str() {
-                config.info_log_macro = v.to_string();
-            }
-        });
+        if let Some(v) = package_metadata["surreal_use_camel_case"].as_bool() {
+           config.use_camel_case = v;
+        }
+        if let Some(v) = package_metadata["surreal_enable_compile_log"].as_bool() {
+           config.enable_compile_log = v;
+        }
+        if let Some(v) = package_metadata["surreal_namespace"].as_str() {
+           config.namespace = v.to_string();
+        }
+        if let Some(v) = package_metadata["surreal_info_log_macro"].as_str() {
+           config.info_log_macro = v.to_string();
+        }
 
         config
     }
